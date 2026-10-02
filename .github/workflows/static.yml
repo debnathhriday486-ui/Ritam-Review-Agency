@@ -1,4 +1,4 @@
-# Simple and reliable workflow for deploying to GitHub Pages
+# Simple and reliable workflow for deploying Vite React app to GitHub Pages
 name: Deploy static content to Pages
 
 on:
@@ -30,13 +30,13 @@ jobs:
         with:
           node-version: 20
 
-      - name: Build dist if not present
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Build Vite application
         run: |
-          if [ ! -f dist/index.html ]; then
-            npm install
-            npm run build
-            cp dist/index.html dist/404.html
-          fi
+          npx vite build
+          cp dist/index.html dist/404.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
