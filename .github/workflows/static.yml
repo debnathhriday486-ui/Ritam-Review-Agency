@@ -1,3 +1,4 @@
+# Simple and reliable workflow for deploying to GitHub Pages
 name: Deploy static content to Pages
 
 on:
@@ -15,7 +16,10 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -25,26 +29,23 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
 
-      - name: Install dependencies
-        run: npm install
+      - name: Build dist if not present
+        run: |
+          if [ ! -f dist/index.html ]; then
+            npm install
+            npm run build
+            cp dist/index.html dist/404.html
+          fi
 
-      - name: Build Vite application
-        run: npm run build
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: './dist'
 
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
