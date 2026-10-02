@@ -15,6 +15,8 @@ import {
   WithdrawalStatus
 } from '../../shared/types.ts';
 
+import { mockApiHandler } from './mockBackend.ts';
+
 const TOKEN_KEY = 'ritam_auth_token';
 const ROLE_KEY = 'ritam_auth_role';
 
@@ -36,7 +38,22 @@ export function getStoredRole(): string | null {
   return localStorage.getItem(ROLE_KEY);
 }
 
+const isStaticHost = () =>
+  typeof window !== 'undefined' &&
+  (window.location.hostname.includes('github.io') ||
+   window.location.hostname.includes('surge.sh') ||
+   window.location.protocol === 'file:');
+
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  // If running directly on GitHub Pages without Express backend, use client mock handler
+  if (isStaticHost()) {
+    try {
+      return mockApiHandler(endpoint, options) as T;
+    } catch (e: any) {
+      throw new Error(e.message || 'Action failed.');
+    }
+  }
+
   const token = getStoredToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -47,18 +64,30 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(endpoint, {
-    ...options,
-    headers,
-  });
+  try {
+    const response = await fetch(endpoint, {
+      ...options,
+      headers,
+    });
 
-  const data = await response.json().catch(() => ({}));
+    const data = await response.json().catch(() => ({}));
 
-  if (!response.ok) {
-    throw new Error(data.error || `Request failed with status ${response.status}`);
+    if (!response.ok) {
+      // If 404 or backend route not implemented, try static handler as fallback
+      if (response.status === 404) {
+        return mockApiHandler(endpoint, options) as T;
+      }
+      throw new Error(data.error || `Request failed with status ${response.status}`);
+    }
+
+    return data as T;
+  } catch (err: any) {
+    // If network failure / connection refused on static page
+    if (err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError')) {
+      return mockApiHandler(endpoint, options) as T;
+    }
+    throw err;
   }
-
-  return data as T;
 }
 
 export const api = {

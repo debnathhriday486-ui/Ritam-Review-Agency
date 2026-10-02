@@ -15,6 +15,7 @@ function expressApiPlugin(): Plugin {
 
 export default defineConfig(() => {
   return {
+    base: './',
     plugins: [expressApiPlugin(), react(), tailwindcss()],
     resolve: {
       alias: {
