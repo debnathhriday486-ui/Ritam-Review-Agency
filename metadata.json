@@ -1,0 +1,6 @@
+{
+  "name": "RITAM REVIEW AGENCY - Educational Review Task Simulator",
+  "description": "Premium educational review task simulator with atomic slot locking, unique comment allocation, simulated wallet ledger, and comprehensive admin controls.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
